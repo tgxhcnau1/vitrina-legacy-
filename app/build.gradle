@@ -20,22 +20,12 @@ android {
     }
 
     defaultConfig {
-        applicationId "stoyck.vitrina.plus"
-        minSdkVersion 23
-        targetSdkVersion 29
-
-        versionCode 109
-        versionName "1.0.109"
-
-        testInstrumentationRunner "stoyck.vitrina.VitrinaTestRunner"
-
-        // Used in Android Manifest and in code
-        def vitrinaAuthorityValue = "stoyck.vitrina"
-        buildConfigField("String", "VITRINA_AUTHORITY", "\"${vitrinaAuthorityValue}\"")
-        manifestPlaceholders = [
-                vitrinaAuthority: vitrinaAuthorityValue,
-        ]
-    }
+    applicationId "atoyek.vitrina.plus"
+    minSdk 21
+    targetSdk 33
+    versionCode 110  // 確保這裡的數字大於或等於原版
+    versionName "1.0.110-plus"
+}
 
     buildTypes {
         release {
