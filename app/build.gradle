@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "stoyck.vitrina"
+        applicationId "stoyck.vitrina.plus"
         minSdkVersion 23
         targetSdkVersion 29
 
