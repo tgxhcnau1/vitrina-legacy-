@@ -1,17 +1,19 @@
 <resources>
-    <string name="app_name">Vitrina+</string>
+    <string name="app_name">vitrina+</string>
 
-    <string name="activity_settings_label">Vitrina Settings</string>
+    <string name="activity_settings_label">vitrina+ Settings</string>
 
     <string name="reddit_client_id">Cz3RfZHd1xgl2g</string>
 
     <string name="main_screen_title">Subreddits</string>
-    <string name="subreddit_input_field_hint">subreddit name</string>
+    <string name="subreddit_input_field_hint">subreddit name (e.g. EarthPorn)</string>
 
     <string name="settings_shuffle_option">Shuffle</string>
     <string name="settings_over18_option">Over 18</string>
 
     <string name="action_search">Search</string>
+    <string name="action_add_subreddit">Add subreddit</string>
+    <string name="action_clear">Clear</string>
     <string name="action_settings">Settings</string>
 
     <string name="nav_header_desc">Navigation header</string>
@@ -23,6 +25,8 @@
     <string name="error_no_idea">Something went wrong</string>
     <string name="error_no_internet">Please check your internet connection</string>
     <string name="error_subreddit_does_not_exist">%1$s could not be found</string>
+    <string name="error_invalid_subreddit_name">Please enter a valid subreddit name</string>
+    <string name="error_subreddit_already_added">%1$s is already in your list</string>
     <string name="message_subreddit_being_added">Adding subreddit %1$s</string>
     <string name="message_subreddit_successfully_added">Added %1$s</string>
     <string name="message_subreddit_removed">Removed subreddit %1$s</string>
@@ -41,16 +45,16 @@
     <string name="action_save_command_received">Started artwork save process</string>
     <string name="action_save_worker_start">Saving artwork</string>
 
-    <string name="message_enable_storage_permission">You need to enable storage permission for Vitrina to save images</string>
+    <string name="message_enable_storage_permission">You need to enable storage permission for vitrina+ to save images</string>
     <string name="message_file_already_exists_at">File already exists at %1$s</string>
 
     <!-- Muzei -->
     <!-- Redirect activity related -->
-    <string name="message_enable_vitrina">Select Vitrina in Muzei</string>
-    <string name="message_enable_vitrina_source">Select Vitrina from the list of Source in Muzei</string>
+    <string name="message_enable_vitrina">Select vitrina+ in Muzei</string>
+    <string name="message_enable_vitrina_source">Select vitrina+ from the list of Source in Muzei</string>
     <string name="message_muzei_missing_error">You must install Muzei from the Google Play Store</string>
     <string name="message_play_store_missing_error">Could not install Muzei from the Google Play Store</string>
     <!-- Visible texts -->
-    <string name="muzei_vitrina_name">Vitrina</string>
+    <string name="muzei_vitrina_name">vitrina+</string>
     <string name="muzei_vitrina_description">Images from Reddit</string>
 </resources>

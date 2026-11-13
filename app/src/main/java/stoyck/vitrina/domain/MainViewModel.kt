@@ -9,23 +9,14 @@ import stoyck.vitrina.R
 import stoyck.vitrina.domain.preferences.PreferencesData
 import stoyck.vitrina.domain.usecase.*
 import stoyck.vitrina.persistence.data.PersistedSubredditData
-import stoyck.vitrina.ui.suggestion.SubredditSuggestionData
 import stoyck.vitrina.util.Debouncer
 import java.net.UnknownHostException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Custom stuff that helps the MainActivity with updating it's values
- *
- * Using architecture components is too complicated with Dagger 2
- * It's probably fine with Application-scope coroutines instead Activity-scoped
- */
 @Singleton
 class MainViewModel @Inject constructor(
     private val context: Context,
-    // Use case names added to the end, because
-    private val getSubredditHintsUseCase: GetSubredditHintsUseCase,
     private val tryAddSubredditUseCase: TryAddSubredditUseCase,
     private val loadSettingsUseCase: LoadSettingsUseCase,
     private val saveSettingsUseCase: SaveSettingsUseCase,
@@ -36,8 +27,6 @@ class MainViewModel @Inject constructor(
     private val job = Dispatchers.IO + SupervisorJob()
 
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-        // No special error handling for this one,
-        // as it is just about setting the message
         GlobalScope.launch {
             showMessageAndLog(throwable)
         }
@@ -46,21 +35,12 @@ class MainViewModel @Inject constructor(
     private val scope = CoroutineScope(job + exceptionHandler)
 
     enum class MenuState {
-        /**
-         * Actions where search and settings can be triggered
-         */
         Default,
-
-        /**
-         * User is performing search
-         */
         Search;
     }
 
-    //
-
     private val _preferencesState: MutableLiveData<PreferencesData?> =
-        MutableLiveData(null) // Only the initial one is null
+        MutableLiveData(null)
 
     val preferencesState: LiveData<PreferencesData?> = _preferencesState
 
@@ -74,20 +54,10 @@ class MainViewModel @Inject constructor(
 
     val subreddits: LiveData<List<PersistedSubredditData>> = _subreddits
 
-    private val _subredditSuggestions: MutableLiveData<List<SubredditSuggestionData>> =
-        MutableLiveData(
-            ArrayList()
-        )
-
-    val subredditSuggestions: LiveData<List<SubredditSuggestionData>> = _subredditSuggestions
-
-    // Can be set from anywhere
     private val _userMessage: MutableLiveData<String?> = MutableLiveData(null)
 
     val userMessage: LiveData<String?> = _userMessage
 
-    // So that when the user returns to the app,
-    // the last toast is not shown
     private val userMessageClearupDebouncer = Debouncer(delayMillis = 100L)
 
     fun setUserMessageAsync(message: String?) {
@@ -153,8 +123,6 @@ class MainViewModel @Inject constructor(
         loadSubreddits()
     }
 
-    //
-
     fun toDefaultMenu() {
         _menuState.value = MenuState.Default
     }
@@ -203,30 +171,8 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun updateSuggestionList(text: String) {
-        if (text.isBlank()) {
-            _subredditSuggestions.value = emptyList()
-            return
-        }
-
-        scope.launch {
-            withLoading {
-                val suggestions = getSubredditHintsUseCase(
-                    partialSubredditName = text
-                )
-
-                withContext(Dispatchers.Main) {
-                    _subredditSuggestions.value = suggestions
-                }
-            }
-        }
-    }
-
     fun tryAddSubreddit(subreddit: String) {
         scope.launch {
-            val progressMessage = context.getString(R.string.message_subreddit_being_added)
-            setUserMessage(progressMessage.format("/r/$subreddit"))
-
             withLoading {
                 val result = tryAddSubredditUseCase(
                     requestedSubredditName = subreddit
@@ -247,7 +193,12 @@ class MainViewModel @Inject constructor(
 
                     val successMessage =
                         context.getString(R.string.message_subreddit_successfully_added)
-                    setUserMessage(successMessage.format("/r/${addedSubreddit.name}"))
+                    val displayLabel = if (addedSubreddit.name.startsWith("u/", ignoreCase = true)) {
+                        "/${addedSubreddit.name}"
+                    } else {
+                        "/r/${addedSubreddit.name}"
+                    }
+                    setUserMessage(successMessage.format(displayLabel))
                 }
             }
         }

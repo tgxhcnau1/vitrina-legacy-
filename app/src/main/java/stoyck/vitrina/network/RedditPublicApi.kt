@@ -1,5 +1,6 @@
 package stoyck.vitrina.network
 
+import okhttp3.ResponseBody
 import retrofit2.http.*
 import stoyck.vitrina.network.data.RedditAboutPage
 import stoyck.vitrina.network.data.RedditAuthorizationResponse
@@ -7,7 +8,7 @@ import stoyck.vitrina.network.data.RedditPostPage
 import stoyck.vitrina.network.data.SubredditSuggestionPage
 
 /**
- * Endpoints that are reachable without any token
+ * Endpoints that are reachable without any Reddit OAuth token or API key
  */
 interface RedditPublicApi {
 
@@ -19,20 +20,35 @@ interface RedditPublicApi {
         @Field("device_id") deviceId: String = "DO_NOT_TRACK_THIS_DEVICE"
     ): RedditAuthorizationResponse
 
-    @Deprecated("Please use the oauth endpoint")
     @GET("/r/{subreddit}/about.json")
     suspend fun getAbout(
         @Path("subreddit") subreddit: String
     ): RedditAboutPage
 
-    @Deprecated("Please use the oauth endpoint")
     @GET("/r/{subreddit}.json")
     suspend fun getPosts(
         @Path("subreddit") subreddit: String,
-        @Query("limit") limit: Int? = null
+        @Query("limit") limit: Int? = null,
+        @Query("raw_json") rawJson: Int = 1
     ): RedditPostPage
 
-    @Deprecated("Please use the oauth endpoint")
+    @GET("/r/{subreddit}/.rss")
+    suspend fun getPostsRss(
+        @Path("subreddit") subreddit: String
+    ): ResponseBody
+
+    @GET("/user/{username}/submitted.json")
+    suspend fun getUserPosts(
+        @Path("username") username: String,
+        @Query("limit") limit: Int? = null,
+        @Query("raw_json") rawJson: Int = 1
+    ): RedditPostPage
+
+    @GET("/user/{username}/submitted/.rss")
+    suspend fun getUserPostsRss(
+        @Path("username") username: String
+    ): ResponseBody
+
     @GET("/subreddits.json")
     suspend fun getSubreddits(
         @Query("q") query: String,

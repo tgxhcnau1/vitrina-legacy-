@@ -6,29 +6,47 @@ apply plugin: 'kotlin-kapt'
 android {
     compileSdkVersion 29
 
-    // switch to v26 if it still does not work
-    // - earlier app breaks at an even later version
-    // https://stackoverflow.com/a/50198499/4420543
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    // https://stackoverflow.com/a/56996020/4420543
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
     defaultConfig {
-    applicationId "atoyek.vitrina.plus"
-    minSdk 21
-    targetSdk 33
-    versionCode 110  // 確保這裡的數字大於或等於原版
-    versionName "1.0.110-plus"
-}
+        applicationId "stoyck.vitrina.plus"
+        minSdkVersion 23
+        targetSdkVersion 29
+
+        versionCode 110
+        versionName "1.0.110-plus"
+
+        testInstrumentationRunner "stoyck.vitrina.VitrinaTestRunner"
+
+        // Used in Android Manifest and in code (required by MuzeiArtProvider)
+        def vitrinaAuthorityValue = "stoyck.vitrina.plus"
+        buildConfigField("String", "VITRINA_AUTHORITY", "\"${vitrinaAuthorityValue}\"")
+        manifestPlaceholders = [
+                vitrinaAuthority: vitrinaAuthorityValue,
+        ]
+    }
+
+    signingConfigs {
+        release {
+            storeFile rootProject.file('keystore/vitrina-plus-release.jks')
+            storePassword 'vitrinaplus'
+            keyAlias 'vitrina+'
+            keyPassword 'vitrinaplus'
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -69,7 +87,7 @@ dependencies {
     // background operation
     implementation "androidx.work:work-runtime-ktx:2.4.0"
 
-    // something automatically added for a layout
+    // material
     implementation 'com.google.android.material:material:1.2.0'
 
     // DI
@@ -77,13 +95,6 @@ dependencies {
     implementation 'com.google.dagger:dagger-android-support:2.28.3'
     kapt 'com.google.dagger:dagger-compiler:2.28.3'
     kapt 'com.google.dagger:dagger-android-processor:2.28.3'
-    // This kaptTest stuff started working like this, don't touch
-    // Also: gradle build does not generate tests !!!
-    //
-    // Comment of https://stackoverflow.com/a/36231516/4420543
-    //      Remember to execute the tests or run assembleAndroidTest
-    //      to actually see the dependency class DaggerMyComponent resolved,
-    //      simply rebuild will not generate the classes from dagger.
     kaptTest 'com.google.dagger:dagger-compiler:2.28.3'
     kaptTest 'com.google.dagger:dagger-android-processor:2.28.3'
     kaptAndroidTest 'com.google.dagger:dagger-compiler:2.28.3'
@@ -99,17 +110,13 @@ dependencies {
     implementation 'hu.autsoft:krate-gson:0.4.0'
 
     // image
-    // https://mvnrepository.com/artifact/com.github.bumptech.glide/glide
     implementation 'com.github.bumptech.glide:glide:4.11.0'
-
 
     // muzei
     implementation 'com.google.android.apps.muzei:muzei-api:3.4.0'
 
-    // ====
     // test
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-
 }

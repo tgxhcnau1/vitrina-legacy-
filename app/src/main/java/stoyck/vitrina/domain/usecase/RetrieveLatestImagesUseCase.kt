@@ -1,5 +1,9 @@
 package stoyck.vitrina.domain.usecase
 
+import com.google.gson.JsonParseException
+import kotlinx.coroutines.delay
+import org.xml.sax.SAXException
+import retrofit2.HttpException
 import stoyck.vitrina.network.RedditService
 import stoyck.vitrina.network.data.PostHint
 import stoyck.vitrina.network.data.RedditPost
@@ -19,11 +23,22 @@ class RetrieveLatestImagesUseCase @Inject constructor(
     private suspend fun loadPostsFromAllSubreddits(
         subreddits: List<PersistedSubredditData>
     ): PersistedFuturePosts {
-        val posts = subreddits.map {
-            // Todo: rate limit these calls, or reddit will do it
-            val posts = reddit.retrievePosts(it.name)
+        val posts = subreddits.mapIndexed { index, subreddit ->
+            if (index > 0) {
+                delay(1500L)
+            }
 
-            return@map it.id to posts
+            val fetchedPosts = try {
+                reddit.retrievePosts(subreddit.name)
+            } catch (e: HttpException) {
+                emptyList<RedditPost>()
+            } catch (e: JsonParseException) {
+                emptyList<RedditPost>()
+            } catch (e: SAXException) {
+                emptyList<RedditPost>()
+            }
+
+            return@mapIndexed subreddit.id to fetchedPosts
         }.toMap()
 
         return PersistedFuturePosts(posts)
@@ -61,51 +76,61 @@ class RetrieveLatestImagesUseCase @Inject constructor(
             .filter { !it.stickied }
             .map { convertToDirectImageLink(it) }
             .filterNotNull()
-        // this was needed for some reason, cannot be used for multiple subreddits so directly
-        // .filter { it.subreddit.equals(subreddit, ignoreCase = true) }
     }
 
     private fun convertToDirectImageLink(info: RedditPost): RedditPost? {
+        val cleanUrl = info.url.replace("&amp;", "&")
         return when (info.postHint) {
             PostHint.Image -> {
-                if (info.url.isBlank())
+                if (cleanUrl.isBlank())
                     null
                 else
-                    info.copy()
+                    info.copy(url = cleanUrl)
             }
             PostHint.Link -> {
-                if (info.domain.contains("imgur"))
-                    return info.copy(
-                        url = convertImgurLinkToDirectLink(info.url),
-                        postHint = PostHint.Image
-                    )
-                else
+                if (info.domain.contains("imgur", ignoreCase = true)) {
+                    try {
+                        info.copy(
+                            url = convertImgurLinkToDirectLink(cleanUrl),
+                            postHint = PostHint.Image
+                        )
+                    } catch (_: IllegalArgumentException) {
+                        null
+                    }
+                } else {
                     null
+                }
             }
-            null, PostHint.Other -> null
+            null, PostHint.Other -> {
+                val pathOnly = cleanUrl.substringBefore('?').substringBefore('#')
+                if (cleanUrl.contains("i.redd.it/", ignoreCase = true) ||
+                    pathOnly.endsWith(".jpg", ignoreCase = true) ||
+                    pathOnly.endsWith(".jpeg", ignoreCase = true) ||
+                    pathOnly.endsWith(".png", ignoreCase = true) ||
+                    pathOnly.endsWith(".webp", ignoreCase = true)
+                ) {
+                    info.copy(url = cleanUrl, postHint = PostHint.Image)
+                } else {
+                    null
+                }
+            }
         }
     }
 
-
     private fun convertImgurLinkToDirectLink(imgurUrl: String): String {
-        // Example:
-        // https://imgur.com/CZKRusY
-        // https://i.imgur.com/CZKRusY.jpg
-
         if (!imgurUrl.toLowerCase(Locale.ROOT).contains("imgur")) {
             throw IllegalArgumentException("The link provided is not an imgur link: $imgurUrl")
         }
 
         val id = imgurUrl
             .substringAfterLast("com/")
-            // There might be a dot in there -
-            // this way it can convert direct links to direct link without a problem
             .substringBefore(".")
+            .substringBefore("?")
+            .substringBefore("/")
 
-        if (id == imgurUrl) {
+        if (id.isBlank() || id == imgurUrl) {
             throw IllegalArgumentException("Could not extract id from the imgur url.")
         } else {
-            // Can be jpg, imgur will solve this
             return "https://i.imgur.com/$id.jpg"
         }
     }

@@ -6,8 +6,10 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextWatcher
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -18,7 +20,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.content_subreddit_list.*
-import kotlinx.android.synthetic.main.content_subreddit_suggestion.*
 import kotlinx.android.synthetic.main.nav_header_main.*
 import stoyck.vitrina.domain.MainViewModel
 import stoyck.vitrina.util.DebouncedTextWatcher
@@ -33,7 +34,6 @@ class MainActivity : AppCompatActivity() {
 
     // There is only add and they need to be removed eventually
     // to make sure that only one of them exists
-    private var subredditInputTextWatcher: TextWatcher? = null
     private var minimumImageWidthTextWatcher: TextWatcher? = null
     private var minimumImageHeightTextWatcher: TextWatcher? = null
 
@@ -50,15 +50,6 @@ class MainActivity : AppCompatActivity() {
                 MainViewModel.MenuState.Default -> renderDefaultState()
                 MainViewModel.MenuState.Search -> renderSearchState()
             }
-        }
-
-        viewModel.subredditSuggestions.observe(this) {
-            subredditSuggestionRecyclerView.setData(it)
-        }
-
-        subredditSuggestionRecyclerView.onSubredditSuggestionClicked = { subredditToAdd ->
-            toDefaultMenu()
-            viewModel.tryAddSubreddit(subredditToAdd.name)
         }
 
         setupSettings()
@@ -98,17 +89,25 @@ class MainActivity : AppCompatActivity() {
     private fun toDefaultMenu() {
         hideKeyboard()
         subredditInputText.setText("")
+        subredditInputText.clearFocus()
         viewModel.toDefaultMenu()
     }
 
-
     private fun toSearchMenu() {
         viewModel.toSearchMenu()
-        subredditInputText?.let {
-            it.requestFocus()
+        subredditInputText?.post {
+            subredditInputText.requestFocus()
             val imm: InputMethodManager =
                 this.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showSoftInput(it, InputMethodManager.SHOW_IMPLICIT);
+            imm.showSoftInput(subredditInputText, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    private fun submitSubredditInput() {
+        val text = subredditInputText.text?.toString()?.trim().orEmpty()
+        toDefaultMenu()
+        if (text.isNotEmpty()) {
+            viewModel.tryAddSubreddit(text)
         }
     }
 
@@ -228,36 +227,32 @@ class MainActivity : AppCompatActivity() {
                 it.visibility = View.VISIBLE
 
                 setSupportActionBar(searchToolbar)
+                supportActionBar?.setDisplayShowTitleEnabled(false)
                 it.setNavigationIcon(R.drawable.ic_keyboard_backspace)
                 it.setNavigationOnClickListener {
                     toDefaultMenu()
                 }
 
+                subredditInputText.setOnEditorActionListener { _, actionId, event ->
+                    val isImeAction = actionId == EditorInfo.IME_ACTION_DONE ||
+                        actionId == EditorInfo.IME_ACTION_GO ||
+                        actionId == EditorInfo.IME_ACTION_SEND ||
+                        actionId == EditorInfo.IME_ACTION_SEARCH
+                    val isHardwareEnter = actionId == EditorInfo.IME_NULL &&
+                        event?.keyCode == KeyEvent.KEYCODE_ENTER &&
+                        event.action == KeyEvent.ACTION_DOWN
 
-                // :( - beauty of a code in the non-declarative ui world
-                val textWatcher = this.subredditInputTextWatcher
-
-                if (textWatcher == null) {
-                    val newTextWatcher = DebouncedTextWatcher(300L) { text ->
-                        viewModel.updateSuggestionList(text)
+                    if (isImeAction || isHardwareEnter) {
+                        submitSubredditInput()
+                        true
+                    } else {
+                        false
                     }
-
-                    this.subredditInputTextWatcher = newTextWatcher
-                    subredditInputText.addTextChangedListener(newTextWatcher)
-                }
-
-                subredditInputText.setOnEditorActionListener { view, id, event ->
-                    val text = view.text.toString()
-                    toDefaultMenu()
-                    viewModel.tryAddSubreddit(text)
-                    true
                 }
             }
         }
 
-        //
-        contentMainContainer.visibility = View.GONE
-        contentSubredditSuggestionContainer.visibility = View.VISIBLE
+        contentMainContainer.visibility = View.VISIBLE
 
         invalidateOptionsMenu()
 
@@ -273,6 +268,7 @@ class MainActivity : AppCompatActivity() {
             defaultToolbar.let {
                 it.visibility = View.VISIBLE
                 setSupportActionBar(it)
+                supportActionBar?.setDisplayShowTitleEnabled(true)
 
                 val toggle = ActionBarDrawerToggle(
                     this,
@@ -293,9 +289,7 @@ class MainActivity : AppCompatActivity() {
             supportActionBar?.title = this.resources.getString(R.string.main_screen_title)
         }
 
-        //
         contentMainContainer.visibility = View.VISIBLE
-        contentSubredditSuggestionContainer.visibility = View.GONE
 
         invalidateOptionsMenu()
 
@@ -320,13 +314,19 @@ class MainActivity : AppCompatActivity() {
                 }
                 MainViewModel.MenuState.Search -> {
                     menuInflater.inflate(R.menu.main_search, menu)
+
+                    val actionConfirmAdd = menu.findItem(R.id.action_confirm_add_subreddit)
+                    actionConfirmAdd.setOnMenuItemClickListener {
+                        submitSubredditInput()
+                        true
+                    }
+
                     val actionClearInputText = menu.findItem(R.id.action_clear_input_text)
                     actionClearInputText.setOnMenuItemClickListener {
-                        if (subredditInputText.getText()?.toString()?.trim() == "") {
+                        if (subredditInputText.text?.toString()?.trim().isNullOrEmpty()) {
                             toDefaultMenu()
                         } else {
                             subredditInputText.setText("")
-                            viewModel.updateSuggestionList("")
                         }
 
                         true

@@ -38,6 +38,7 @@
                 android:hint="@string/subreddit_input_field_hint"
                 android:imeOptions="actionDone"
                 android:importantForAutofill="no"
+                android:inputType="textNoSuggestions"
                 android:singleLine="true" />
         </androidx.appcompat.widget.Toolbar>
 
@@ -51,10 +52,6 @@
         <include
             layout="@layout/content_main"
             android:visibility="visible" />
-
-        <include
-            layout="@layout/content_subreddit_suggestion"
-            android:visibility="gone" />
 
         <!-- Progressbar and fixing spacing -->
         <FrameLayout
