@@ -12,6 +12,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.observe
@@ -36,6 +37,13 @@ class MainActivity : AppCompatActivity() {
     // to make sure that only one of them exists
     private var minimumImageWidthTextWatcher: TextWatcher? = null
     private var minimumImageHeightTextWatcher: TextWatcher? = null
+
+    private var pendingRestoreJson: String? = null
+
+    companion object {
+        private const val REQUEST_CREATE_BACKUP = 4101
+        private const val REQUEST_OPEN_BACKUP = 4102
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         (applicationContext as VitrinaApplication).appComponent
@@ -218,6 +226,102 @@ class MainActivity : AppCompatActivity() {
                 Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/andrasferenczi/vitrina"))
             startActivity(browserIntent)
         }
+
+        backupButton.setOnClickListener {
+            startBackupFilePicker()
+        }
+
+        restoreButton.setOnClickListener {
+            startRestoreFilePicker()
+        }
+    }
+
+    private fun startBackupFilePicker() {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, getString(R.string.backup_file_name))
+        }
+        try {
+            startActivityForResult(intent, REQUEST_CREATE_BACKUP)
+        } catch (e: ActivityNotFoundException) {
+            viewModel.notifyBackupFailed()
+        }
+    }
+
+    private fun startRestoreFilePicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/json", "text/plain", "text/*"))
+        }
+        try {
+            startActivityForResult(intent, REQUEST_OPEN_BACKUP)
+        } catch (e: ActivityNotFoundException) {
+            viewModel.notifyBackupFailed()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (resultCode != Activity.RESULT_OK) return
+        val uri = data?.data ?: return
+
+        when (requestCode) {
+            REQUEST_CREATE_BACKUP -> writeBackupTo(uri)
+            REQUEST_OPEN_BACKUP -> readBackupFrom(uri)
+        }
+    }
+
+    private fun writeBackupTo(uri: Uri) {
+        val json = viewModel.createBackupJson()
+        val count = viewModel.currentSubredditCount()
+        Thread {
+            try {
+                contentResolver.openOutputStream(uri, "wt")?.use { output ->
+                    output.write(json.toByteArray(Charsets.UTF_8))
+                } ?: throw IllegalStateException("Could not open backup file")
+                viewModel.notifyBackupSaved(count)
+            } catch (e: Exception) {
+                viewModel.notifyBackupFailed()
+            }
+        }.start()
+    }
+
+    private fun readBackupFrom(uri: Uri) {
+        Thread {
+            val json = try {
+                contentResolver.openInputStream(uri)?.use { input ->
+                    input.readBytes().toString(Charsets.UTF_8)
+                } ?: throw IllegalStateException("Could not open backup file")
+            } catch (e: Exception) {
+                viewModel.notifyBackupFailed()
+                return@Thread
+            }
+
+            runOnUiThread {
+                pendingRestoreJson = json
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.restore_confirm_title)
+                    .setMessage(
+                        getString(
+                            R.string.restore_confirm_message,
+                            viewModel.currentSubredditCount()
+                        )
+                    )
+                    .setPositiveButton(R.string.action_restore_confirm) { _, _ ->
+                        pendingRestoreJson?.let { viewModel.restoreFromBackupJson(it) }
+                        pendingRestoreJson = null
+                        drawerLayout.closeDrawer(GravityCompat.START)
+                    }
+                    .setNegativeButton(R.string.action_cancel) { _, _ ->
+                        pendingRestoreJson = null
+                    }
+                    .setOnCancelListener { pendingRestoreJson = null }
+                    .show()
+            }
+        }.start()
     }
 
     private fun renderSearchState() {

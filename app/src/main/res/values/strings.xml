@@ -11,6 +11,20 @@
     <string name="settings_shuffle_option">Shuffle</string>
     <string name="settings_over18_option">Over 18</string>
 
+    <string name="settings_backup_section">Backup &amp; Restore</string>
+    <string name="settings_backup_description">Backs up all subreddits/users and their minimum upvotes. Restore replaces your current list.</string>
+    <string name="action_backup">Backup</string>
+    <string name="action_restore">Restore</string>
+    <string name="backup_file_name">vitrina-plus-backup.json</string>
+    <string name="restore_confirm_title">Restore backup?</string>
+    <string name="restore_confirm_message">This will replace your current %1$d subreddits/users with the list from the backup file.</string>
+    <string name="action_restore_confirm">Replace</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="message_backup_saved">Backup saved (%1$d entries)</string>
+    <string name="message_backup_restored">Restored %1$d subreddits/users</string>
+    <string name="error_invalid_backup_file">That is not a valid vitrina+ backup file</string>
+    <string name="error_backup_failed">Backup / restore failed</string>
+
     <string name="action_search">Search</string>
     <string name="action_add_subreddit">Add subreddit</string>
     <string name="action_clear">Clear</string>

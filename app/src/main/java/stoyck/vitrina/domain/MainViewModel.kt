@@ -151,6 +151,40 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /** Backup: JSON of all subreddits/users + their minimum upvotes. */
+    fun createBackupJson(): String {
+        return VitrinaBackupCodec.encode(_subreddits.value ?: emptyList())
+    }
+
+    fun currentSubredditCount(): Int = _subreddits.value?.size ?: 0
+
+    /** Restore: replaces the whole current list with the backup file. */
+    fun restoreFromBackupJson(json: String) {
+        scope.launch {
+            try {
+                val restored = VitrinaBackupCodec.decode(json)
+                saveSubredditsUseCase(restored)
+
+                withContext(Dispatchers.Main) {
+                    _subreddits.value = restored
+                    setUserMessage(
+                        context.getString(R.string.message_backup_restored, restored.size)
+                    )
+                }
+            } catch (e: Exception) {
+                setUserMessage(context.getString(R.string.error_invalid_backup_file))
+            }
+        }
+    }
+
+    fun notifyBackupSaved(count: Int) {
+        setUserMessageAsync(context.getString(R.string.message_backup_saved, count))
+    }
+
+    fun notifyBackupFailed() {
+        setUserMessageAsync(context.getString(R.string.error_backup_failed))
+    }
+
     fun saveSubreddits(subreddits: List<PersistedSubredditData>) {
         scope.launch {
             saveSubredditsUseCase(subreddits)

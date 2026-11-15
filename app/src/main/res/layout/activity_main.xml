@@ -147,6 +147,43 @@
 
                         </LinearLayout>
                     </LinearLayout>
+
+                    <LinearLayout
+                        android:paddingTop="@dimen/spacing__6"
+                        android:paddingBottom="@dimen/spacing__6"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingBottom="@dimen/spacing__3"
+                            android:textStyle="bold"
+                            android:textSize="@dimen/typography__body"
+                            android:text="@string/settings_backup_section" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingBottom="@dimen/spacing__3"
+                            android:textSize="@dimen/typography__body"
+                            android:text="@string/settings_backup_description" />
+
+                        <Button
+                            android:id="@+id/backupButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/action_backup" />
+
+                        <Button
+                            android:id="@+id/restoreButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing__3"
+                            android:text="@string/action_restore" />
+
+                    </LinearLayout>
                 </LinearLayout>
             </ScrollView>
         </LinearLayout>
