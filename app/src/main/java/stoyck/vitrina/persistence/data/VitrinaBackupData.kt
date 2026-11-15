@@ -61,7 +61,7 @@ object VitrinaBackupCodec {
                 val type = object : TypeToken<List<PersistedSubredditData>>() {}.type
                 gson.fromJson<List<PersistedSubredditData>>(trimmed, type) ?: emptyList()
             } else {
-                val root = JsonParser.parseString(trimmed).asJsonObject
+                val root = JsonParser().parse(trimmed).asJsonObject
                 val version = if (root.has("version")) root.get("version").asInt else 1
                 if (version > VitrinaBackupData.CURRENT_VERSION) {
                     throw IllegalArgumentException("Backup version $version is newer than supported")
@@ -97,7 +97,7 @@ object VitrinaBackupCodec {
             val name = entry.name?.trim().orEmpty()
             if (name.isEmpty()) continue
 
-            val key = name.lowercase(Locale.ROOT)
+            val key = name.toLowerCase(Locale.ROOT)
             if (!seen.add(key)) continue
 
             val safeUpvotes = if (entry.minUpvoteCount < 0) 0L else entry.minUpvoteCount
@@ -119,7 +119,7 @@ object VitrinaBackupCodec {
         return result.map { entry ->
             var candidate = entry.id
             var counter = 2
-            while (!usedIds.add(candidate.lowercase(Locale.ROOT))) {
+            while (!usedIds.add(candidate.toLowerCase(Locale.ROOT))) {
                 candidate = "${entry.id}_$counter"
                 counter++
             }
