@@ -12,8 +12,11 @@ special thank: Mr. Agent in Arena.ai
 
 -----------------------------------------------------------------------------------------------------------------------------------
 well, after reddit ban public api, this apply was not working anymore about search subreddit with api, so I remove search subreddit.
+
 Now, you need to text subreddit title directly like: r/xxxx(subreddit name) or u/xxxx(subreddit name) and add it.
+
 Anyway, thank for AI to help me building this fork, or I will not finish this.
+
 And I don't learn any java or something about building app, I will try to release, you know, no deadline.
 > Note:
 >
