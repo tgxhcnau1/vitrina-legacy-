@@ -9,6 +9,7 @@ import stoyck.vitrina.R
 import stoyck.vitrina.domain.preferences.PreferencesData
 import stoyck.vitrina.domain.usecase.*
 import stoyck.vitrina.persistence.data.PersistedSubredditData
+import stoyck.vitrina.persistence.data.VitrinaBackupCodec
 import stoyck.vitrina.util.Debouncer
 import java.net.UnknownHostException
 import javax.inject.Inject
