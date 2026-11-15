@@ -4,7 +4,7 @@ Added backup and restore functionality to the side menu.
 
 Backups will save in .JSON; Restore, only need to import your backup .json file.
 
-Note: Restore will overwrite your current subreddits—please use with caution.
+**Note: Restore will overwrite your current subreddits—please use with caution.**
 
 I believe this will be the final version, as all the features I envisioned have now been fully implemented.
 
