@@ -35,10 +35,14 @@ android {
 
     signingConfigs {
         release {
-            storeFile rootProject.file('keystore/vitrina-plus-release.jks')
-            storePassword 'vitrinaplus'
-            keyAlias 'vitrina+'
-            keyPassword 'vitrinaplus'
+            // Signing key is NEVER stored in this repo.
+            // CI provides it via GitHub Secrets (see .github/workflows/build.yml):
+            //   VITRINA_KEYSTORE_FILE / VITRINA_STORE_PASSWORD / VITRINA_KEY_PASSWORD
+            // For a local build, set those same environment variables.
+            storeFile file(System.getenv("VITRINA_KEYSTORE_FILE") ?: rootProject.file('keystore/vitrina-plus-release.jks').absolutePath)
+            storePassword System.getenv("VITRINA_STORE_PASSWORD")
+            keyAlias System.getenv("VITRINA_KEY_ALIAS") ?: 'vitrina+'
+            keyPassword System.getenv("VITRINA_KEY_PASSWORD")
             v1SigningEnabled true
             v2SigningEnabled true
         }

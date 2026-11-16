@@ -5,4 +5,4 @@ val RedditAbout.doesSubExist: Boolean
     get() = this.id.isNotBlank()
 
 val RedditPost.fullPostLink: String
-    get() = "http://reddit.com$permalink"
+    get() = "https://reddit.com$permalink"

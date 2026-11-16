@@ -293,7 +293,22 @@ class MainActivity : AppCompatActivity() {
         Thread {
             val json = try {
                 contentResolver.openInputStream(uri)?.use { input ->
-                    input.readBytes().toString(Charsets.UTF_8)
+                    // Safety: never load an unlimited file into memory.
+                    // A real vitrina+ backup is only a few KB; 5 MB is generous.
+                    val maxBytes = 5 * 1024 * 1024
+                    val buffer = ByteArray(8192)
+                    val out = java.io.ByteArrayOutputStream()
+                    var total = 0
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read <= 0) break
+                        total += read
+                        if (total > maxBytes) {
+                            throw IllegalStateException("Backup file is too large")
+                        }
+                        out.write(buffer, 0, read)
+                    }
+                    out.toByteArray().toString(Charsets.UTF_8)
                 } ?: throw IllegalStateException("Could not open backup file")
             } catch (e: Exception) {
                 viewModel.notifyBackupFailed()
