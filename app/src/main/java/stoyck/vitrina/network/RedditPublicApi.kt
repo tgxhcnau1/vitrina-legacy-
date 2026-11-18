@@ -51,12 +51,15 @@ interface RedditPublicApi {
     ): ResponseBody
 
     /**
-     * Fallback for user feeds via the Arctic Shift public archive.
-     * (Reddit's own unauthenticated user JSON/RSS are blocked/discontinued.)
+     * Fallback for user AND subreddit feeds via the Arctic Shift public
+     * archive. (Reddit's unauthenticated JSON is blocked and Reddit
+     * retired all RSS feeds on 2026-11-13.)
+     * Pass exactly one of [author] / [subreddit].
      */
     @GET("https://arctic-shift.photon-reddit.com/api/posts/search")
-    suspend fun getUserPostsFromArchive(
-        @Query("author") author: String,
+    suspend fun getPostsFromArchive(
+        @Query("author") author: String? = null,
+        @Query("subreddit") subreddit: String? = null,
         @Query("limit") limit: Int? = 100,
         @Query("sort") sort: String = "desc"
     ): ArcticShiftSearchResponse

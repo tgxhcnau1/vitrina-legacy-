@@ -85,22 +85,73 @@ class RedditService @Inject constructor(
                 // fall through to archive
             }
 
-            val archive = publicApi.getUserPostsFromArchive(author = username)
-            return archive.data.orEmpty().map { it.toRedditPost() }
+            return fetchFromArchive(author = username)
         }
 
-        return try {
+        // Subreddit chain (same idea):
+        // 1. Reddit JSON (403 without OAuth for most networks now)
+        // 2. Reddit RSS (retired by Reddit on 2026-11-13, kept just in case)
+        // 3. Arctic Shift public archive - currently the working route.
+        try {
             val result = publicApi.getPosts(
                 subreddit = subreddit,
                 limit = 100,
                 rawJson = 1
             )
-            result.data.children.map { it.data }
+            val posts = result.data.children.map { it.data }
+            if (posts.isNotEmpty()) return posts
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            val rssXml = publicApi.getPostsRss(subreddit = subreddit).use { it.string() }
-            RedditRssParser.parse(rssXml, fallbackSubreddit = subreddit)
+            // fall through to RSS
         }
+
+        try {
+            val rssXml = publicApi.getPostsRss(subreddit = subreddit).use { it.string() }
+            val rssPosts = RedditRssParser.parse(rssXml, fallbackSubreddit = subreddit)
+            if (rssPosts.isNotEmpty()) return rssPosts
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            // fall through to archive
+        }
+
+        // Archive search takes one subreddit at a time; support "a+b" names.
+        return subreddit.split("+")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .flatMap { single -> fetchFromArchive(subreddit = single) }
+    }
+
+    /**
+     * Arctic Shift archive lookup with one retry on its transient
+     * "Timeout" error responses. Never throws for network problems:
+     * one failing entry must not poison fetching for all other entries,
+     * so failures simply return an empty list for that entry.
+     */
+    private suspend fun fetchFromArchive(
+        author: String? = null,
+        subreddit: String? = null
+    ): List<RedditPost> {
+        repeat(2) { attempt ->
+            try {
+                val response = publicApi.getPostsFromArchive(
+                    author = author,
+                    subreddit = subreddit
+                )
+                val posts = response.data.orEmpty()
+                if (posts.isNotEmpty()) {
+                    return posts.map { it.toRedditPost() }
+                }
+                if (response.error == null) {
+                    return emptyList()
+                }
+                // transient archive error (e.g. Timeout) -> retry once
+                if (attempt == 0) kotlinx.coroutines.delay(2000L)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                if (attempt == 0) kotlinx.coroutines.delay(2000L)
+            }
+        }
+        return emptyList()
     }
 
     @Deprecated("Subreddit autocomplete removed in favor of offline direct text input")
