@@ -30,11 +30,10 @@ class RetrieveLatestImagesUseCase @Inject constructor(
 
             val fetchedPosts = try {
                 reddit.retrievePosts(subreddit.name)
-            } catch (e: HttpException) {
-                emptyList<RedditPost>()
-            } catch (e: JsonParseException) {
-                emptyList<RedditPost>()
-            } catch (e: SAXException) {
+            } catch (e: Exception) {
+                // One failing entry must never poison fetching for all
+                // other entries (network, archive, parsing, ...).
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 emptyList<RedditPost>()
             }
 
