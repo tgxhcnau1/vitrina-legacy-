@@ -60,7 +60,9 @@ interface RedditPublicApi {
     suspend fun getPostsFromArchive(
         @Query("author") author: String? = null,
         @Query("subreddit") subreddit: String? = null,
-        @Query("limit") limit: Int? = 100,
+        // 25 posts is plenty per entry and keeps each archive answer
+        // small/fast - 100 made big lists (30+ entries) time out.
+        @Query("limit") limit: Int? = 25,
         @Query("sort") sort: String = "desc"
     ): ArcticShiftSearchResponse
 
