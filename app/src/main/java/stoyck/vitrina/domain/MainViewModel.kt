@@ -22,7 +22,10 @@ class MainViewModel @Inject constructor(
     private val loadSettingsUseCase: LoadSettingsUseCase,
     private val saveSettingsUseCase: SaveSettingsUseCase,
     private val loadSubredditsUseCase: LoadSubredditsUseCase,
-    private val saveSubredditsUseCase: SaveSubredditsUseCase
+    private val saveSubredditsUseCase: SaveSubredditsUseCase,
+    private val savePostsUseCase: SavePostsUseCase,
+    private val saveFuturePostsUseCase: SaveFuturePostsUseCase,
+    private val redditService: stoyck.vitrina.network.RedditService
 ) {
 
     private val job = Dispatchers.IO + SupervisorJob()
@@ -54,6 +57,68 @@ class MainViewModel @Inject constructor(
     )
 
     val subreddits: LiveData<List<PersistedSubredditData>> = _subreddits
+
+    private val _diagnosticResult: MutableLiveData<String?> = MutableLiveData(null)
+
+    val diagnosticResult: LiveData<String?> = _diagnosticResult
+
+    fun clearDiagnosticResult() {
+        _diagnosticResult.value = null
+    }
+
+    /** Clears the "already seen" memory + queued pictures (list/settings stay). */
+    fun resetSeenPictures() {
+        scope.launch {
+            savePostsUseCase(emptyList())
+            saveFuturePostsUseCase(stoyck.vitrina.persistence.data.PersistedFuturePosts.default())
+            setUserMessage(context.getString(R.string.message_seen_reset))
+        }
+    }
+
+    /**
+     * Fetches every entry for real and reports, per entry, how many
+     * posts / image posts came back (or the error). Shown in a dialog.
+     */
+    fun runConnectionTest() {
+        scope.launch {
+            withLoading {
+                val entries = loadSubredditsUseCase()
+                val settings = loadSettingsUseCase()
+                val lines = mutableListOf<String>()
+                lines.add("Over 18: ${if (settings.isOver18) "ON" else "OFF"}")
+                lines.add("Entries: ${entries.size}")
+                lines.add("")
+
+                if (entries.isEmpty()) {
+                    lines.add("Your list is EMPTY - add or Restore entries first.")
+                }
+
+                for (entry in entries) {
+                    try {
+                        val posts = redditService.retrievePosts(entry.name)
+                        val images = posts.count { post ->
+                            post.postHint == stoyck.vitrina.network.data.PostHint.Image ||
+                                post.url.contains("i.redd.it", ignoreCase = true)
+                        }
+                        val usable = posts.count { post ->
+                            post.score > entry.minUpvoteCount &&
+                                (settings.isOver18 || !post.over18) &&
+                                (post.postHint == stoyck.vitrina.network.data.PostHint.Image ||
+                                    post.url.contains("i.redd.it", ignoreCase = true))
+                        }
+                        lines.add("${entry.name}: ${posts.size} posts, $images images, $usable usable (min ${entry.minUpvoteCount})")
+                    } catch (e: Exception) {
+                        if (e is CancellationException) throw e
+                        lines.add("${entry.name}: ERROR ${e.javaClass.simpleName}: ${e.message?.take(120)}")
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    _diagnosticResult.value = lines.joinToString("\n")
+                }
+            }
+        }
+    }
 
     private val _userMessage: MutableLiveData<String?> = MutableLiveData(null)
 
