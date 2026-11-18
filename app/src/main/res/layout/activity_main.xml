@@ -183,6 +183,20 @@
                             android:layout_marginTop="@dimen/spacing__3"
                             android:text="@string/action_restore" />
 
+                        <Button
+                            android:id="@+id/testConnectionButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing__3"
+                            android:text="@string/action_test_connection" />
+
+                        <Button
+                            android:id="@+id/resetSeenButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/spacing__3"
+                            android:text="@string/action_reset_seen" />
+
                     </LinearLayout>
                 </LinearLayout>
             </ScrollView>
