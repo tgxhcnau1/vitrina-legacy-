@@ -22,6 +22,11 @@
     <string name="action_cancel">Cancel</string>
     <string name="message_backup_saved">Backup saved (%1$d entries)</string>
     <string name="message_backup_restored">Restored %1$d subreddits/users</string>
+    <string name="action_test_connection">Test connection</string>
+    <string name="action_reset_seen">Reset seen pictures</string>
+    <string name="diagnostic_title">Connection test result</string>
+    <string name="action_ok">OK</string>
+    <string name="message_seen_reset">Seen pictures forgotten - old pictures can show again</string>
     <string name="error_invalid_backup_file">That is not a valid vitrina+ backup file</string>
     <string name="error_backup_failed">Backup / restore failed</string>
 
