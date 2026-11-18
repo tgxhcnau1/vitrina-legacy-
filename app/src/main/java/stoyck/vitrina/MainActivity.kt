@@ -80,6 +80,19 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        viewModel.diagnosticResult.observe(this) { result ->
+            if (result != null) {
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.diagnostic_title)
+                    .setMessage(result)
+                    .setPositiveButton(R.string.action_ok) { _, _ ->
+                        viewModel.clearDiagnosticResult()
+                    }
+                    .setOnCancelListener { viewModel.clearDiagnosticResult() }
+                    .show()
+            }
+        }
+
         viewModel.subreddits.observe(this) { subreddits ->
             if (subreddits.isEmpty()) {
                 noSubredditsMessage.visibility = View.VISIBLE
@@ -233,6 +246,14 @@ class MainActivity : AppCompatActivity() {
 
         restoreButton.setOnClickListener {
             startRestoreFilePicker()
+        }
+
+        testConnectionButton.setOnClickListener {
+            viewModel.runConnectionTest()
+        }
+
+        resetSeenButton.setOnClickListener {
+            viewModel.resetSeenPictures()
         }
     }
 
