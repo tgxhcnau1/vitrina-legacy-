@@ -16,9 +16,15 @@ class TryRetrieveNextMuzeiArtworkUseCase @Inject constructor(
     data class Result(val artwork: Artwork, val temporaryFile: File)
 
     private fun RedditPost.toArtwork(): Artwork {
+        // Reddit calls a user's profile "r/u_name"; display it as "u/name".
+        val cleanTitle = if (subredditNamePrefixed.startsWith("r/u_", ignoreCase = true)) {
+            "u/" + subredditNamePrefixed.substring(4)
+        } else {
+            subredditNamePrefixed
+        }
         return Artwork(
             token = id,
-            title = subredditNamePrefixed,
+            title = cleanTitle,
             byline = title,
             attribution = author,
             persistentUri = Uri.parse(url),

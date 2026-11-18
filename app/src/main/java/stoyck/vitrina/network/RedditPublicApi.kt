@@ -2,6 +2,7 @@ package stoyck.vitrina.network
 
 import okhttp3.ResponseBody
 import retrofit2.http.*
+import stoyck.vitrina.network.data.ArcticShiftSearchResponse
 import stoyck.vitrina.network.data.RedditAboutPage
 import stoyck.vitrina.network.data.RedditAuthorizationResponse
 import stoyck.vitrina.network.data.RedditPostPage
@@ -48,6 +49,17 @@ interface RedditPublicApi {
     suspend fun getUserPostsRss(
         @Path("username") username: String
     ): ResponseBody
+
+    /**
+     * Fallback for user feeds via the Arctic Shift public archive.
+     * (Reddit's own unauthenticated user JSON/RSS are blocked/discontinued.)
+     */
+    @GET("https://arctic-shift.photon-reddit.com/api/posts/search")
+    suspend fun getUserPostsFromArchive(
+        @Query("author") author: String,
+        @Query("limit") limit: Int? = 100,
+        @Query("sort") sort: String = "desc"
+    ): ArcticShiftSearchResponse
 
     @GET("/subreddits.json")
     suspend fun getSubreddits(

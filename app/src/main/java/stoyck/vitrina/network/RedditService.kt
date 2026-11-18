@@ -58,18 +58,35 @@ class RedditService @Inject constructor(
                 .removePrefix("u_")
                 .removePrefix("U_")
 
-            return try {
+            // User feeds need a longer fallback chain than subreddits:
+            // 1. Reddit JSON (often 403 without OAuth)
+            // 2. Reddit user RSS (now returns 404 "Not Found" feeds)
+            // 3. Arctic Shift public archive (no key needed) - this is
+            //    currently the route that actually returns user posts.
+            try {
                 val result = publicApi.getUserPosts(
                     username = username,
                     limit = 100,
                     rawJson = 1
                 )
-                result.data.children.map { it.data }
+                val posts = result.data.children.map { it.data }
+                if (posts.isNotEmpty()) return posts
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                val rssXml = publicApi.getUserPostsRss(username = username).use { it.string() }
-                RedditRssParser.parse(rssXml, fallbackSubreddit = "u/$username")
+                // fall through to RSS
             }
+
+            try {
+                val rssXml = publicApi.getUserPostsRss(username = username).use { it.string() }
+                val rssPosts = RedditRssParser.parse(rssXml, fallbackSubreddit = "u/$username")
+                if (rssPosts.isNotEmpty()) return rssPosts
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                // fall through to archive
+            }
+
+            val archive = publicApi.getUserPostsFromArchive(author = username)
+            return archive.data.orEmpty().map { it.toRedditPost() }
         }
 
         return try {

@@ -39,11 +39,7 @@ class TryAddSubredditUseCase @Inject constructor(
         }
 
         if (alreadyExists) {
-            val displayLabel = if (normalizedName.startsWith("u/", ignoreCase = true)) {
-                "/$normalizedName"
-            } else {
-                "/r/$normalizedName"
-            }
+            val displayLabel = PersistedSubredditData.displayLabel(normalizedName)
             val message = subredditAlreadyAddedMessage.format(displayLabel)
             return VResult.failure(UserReadableException(message))
         }

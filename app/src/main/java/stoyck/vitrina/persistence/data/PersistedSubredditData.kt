@@ -14,6 +14,26 @@ data class PersistedSubredditData(
 ) {
 
     companion object {
+
+        /**
+         * Correct human-readable prefix for an entry name.
+         * Subreddits become "r/EarthPorn"; Reddit users become "u/SomeUser".
+         * Never produces broken mixes like "r/u/SomeUser".
+         */
+        fun prefixedName(name: String): String {
+            val trimmed = name.trim().trim('/')
+            return when {
+                trimmed.startsWith("u/", ignoreCase = true) -> "u/" + trimmed.substring(2)
+                trimmed.startsWith("r/", ignoreCase = true) -> "r/" + trimmed.substring(2)
+                trimmed.startsWith("u_", ignoreCase = true) -> "u/" + trimmed.substring(2)
+                trimmed.startsWith("r_", ignoreCase = true) -> "r/" + trimmed.substring(2)
+                else -> "r/$trimmed"
+            }
+        }
+
+        /** Like [prefixedName], but with a leading slash: "/r/EarthPorn", "/u/SomeUser". */
+        fun displayLabel(name: String): String = "/${prefixedName(name)}"
+
         fun fromAbout(about: RedditAbout): PersistedSubredditData {
             return PersistedSubredditData(
                 id = about.id,

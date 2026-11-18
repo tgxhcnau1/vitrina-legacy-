@@ -89,7 +89,9 @@ class SubredditsRecyclerView @JvmOverloads constructor(
 
     override fun onItemDismiss(position: Int) {
         val itemToBeRemoved = subredditAdapter.data[position]
-        val message = this.removedMessage.format("/r/${itemToBeRemoved.name}")
+        val message = this.removedMessage.format(
+            stoyck.vitrina.persistence.data.PersistedSubredditData.displayLabel(itemToBeRemoved.name)
+        )
 
         subredditAdapter.onItemDismiss(position)
 

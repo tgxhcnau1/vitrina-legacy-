@@ -122,17 +122,37 @@ object RedditRssParser {
     }
 
     private fun extractCategory(entry: Element, fallbackSubreddit: String): Pair<String, String> {
+        // Correct prefix: users are "u/name", subreddits are "r/name".
+        // (Previously every fallback became "r/<name>", turning a user feed
+        //  named "u/SomeUser" into the broken title "r/u/SomeUser".)
+        fun prefixed(raw: String): String {
+            val trimmed = raw.trim().trim('/')
+            return when {
+                trimmed.startsWith("u/", ignoreCase = true) -> "u/" + trimmed.substring(2)
+                trimmed.startsWith("r/", ignoreCase = true) -> "r/" + trimmed.substring(2)
+                trimmed.startsWith("u_", ignoreCase = true) -> "u/" + trimmed.substring(2)
+                trimmed.startsWith("r_", ignoreCase = true) -> "r/" + trimmed.substring(2)
+                trimmed.isBlank() -> ""
+                else -> "r/$trimmed"
+            }
+        }
+
         val catNodes = entry.getElementsByTagName("category")
         if (catNodes.length > 0) {
             val catEl = catNodes.item(0) as? Element
             val term = catEl?.getAttribute("term").orEmpty().ifBlank { fallbackSubreddit }
             val label = catEl?.getAttribute("label").orEmpty().ifBlank {
-                if (term.isNotBlank()) "r/$term" else ""
+                prefixed(term)
             }
-            return term to label
+            // Reddit labels user-profile posts as "r/u_name"; show "u/name" instead.
+            val cleanLabel = if (label.startsWith("r/u_", ignoreCase = true)) {
+                "u/" + label.substring(4)
+            } else {
+                label
+            }
+            return term to cleanLabel
         }
-        val pref = if (fallbackSubreddit.isNotBlank()) "r/$fallbackSubreddit" else ""
-        return fallbackSubreddit to pref
+        return fallbackSubreddit to prefixed(fallbackSubreddit)
     }
 
     private fun extractPermalink(entry: Element): String {

@@ -228,11 +228,7 @@ class MainViewModel @Inject constructor(
 
                     val successMessage =
                         context.getString(R.string.message_subreddit_successfully_added)
-                    val displayLabel = if (addedSubreddit.name.startsWith("u/", ignoreCase = true)) {
-                        "/${addedSubreddit.name}"
-                    } else {
-                        "/r/${addedSubreddit.name}"
-                    }
+                    val displayLabel = PersistedSubredditData.displayLabel(addedSubreddit.name)
                     setUserMessage(successMessage.format(displayLabel))
                 }
             }
