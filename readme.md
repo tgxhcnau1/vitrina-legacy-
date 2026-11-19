@@ -1,10 +1,29 @@
+V2 1.0.1004 version update to Fix Errors.
+
+1.Enhanced key security.
+
+2.Fixed program errors
+
+3.Resolved image storage issues.
+
+4.Corrected string errors.(text u/xxxx into r/u/xxxx)
+
+5.Added "test connection".
+
+6.Added "Reset Seen" .
+
+
+
+
+
+
 V2 update.
 
 Added backup and restore functionality to the side menu.
 
 Backups will save in .JSON; Restore, only need to import your backup .json file.
 
-**Note: Restore will overwrite your current subreddits—please use with caution.**
+**!!Note: Restore will overwrite your current subreddits—please use with caution.!!**
 
 I believe this will be the final version, as all the features I envisioned have now been fully implemented.
 
